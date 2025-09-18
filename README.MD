@@ -204,13 +204,58 @@ copies or substantial portions of the Software.
 - GitHub: [@LaneZero](https://github.com/LaneZero)
 - Profile: [https://github.com/LaneZero](https://github.com/LaneZero)
 
-## 🌟 Support
+## Support
 
-If you found this extension helpful, please:
-- ⭐ Star this repository
-- 🐛 Report bugs in [Issues](https://github.com/LaneZero/InstaNeverPause/issues)
-- 💡 Suggest features in [Discussions](https://github.com/LaneZero/InstaNeverPause/discussions)
-- 📢 Share with friends who use Instagram
+If you find this project helpful, consider:
+
+- ⭐ Starring the repository
+- ☕ [Buying me a coffee](https://www.coffeete.ir/AhmadR3zA)
+- 🐛 Reporting issues
+- 🤝 Contributing to the codebase
+
+<details markdown="1"> <summary> <h3> # Supported Cryptocurrencies and Networks
+</h3></summary>
+
+### Networks:
+
+-   **Bitcoin**
+    -   Network: `BTC`
+    -   Address: `bc1q5tl36qpk27hf7upl8l753xa0gcm57adrvmwgkz`
+
+## Tether (USDT)
+
+### Networks:
+
+-   **Tether USDT**
+    
+    -   Network: `TRC20`
+    -   Address: `TA5pibChqS7CeHiDvfP7V3uQVMynk6SxLq`
+-   **Binance Smart Chain (BEP20)**
+    
+    -   Network: `BSC`
+    -   Address: `0x6634E26BA0e323182B7A9a89278E9a7BbCa9aF70`
+-   **TRON (TRC20)**
+    
+    -   Network: `TRX`
+    -   Address: `TA5pibChqS7CeHiDvfP7V3uQVMynk6SxLq`
+-   **Polygon**
+    
+    -   Network: `MATIC`
+    -   Address: `0x6634E26BA0e323182B7A9a89278E9a7BbCa9aF70`
+-   **Solana**
+    
+    -   Network: `SOL`
+    -   Address: `91kuBFEZAnRk8ixsuzAQnAVvtzLAsQpPFRsfe285ZKUC`
+-   **Ethereum**
+    
+    -   Network: `Ethereum TRC20`
+    -   Address: `0x6634E26BA0e323182B7A9a89278E9a7BbCa9aF70`
+
+</details>
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🔒 Privacy
 
@@ -228,11 +273,7 @@ This extension:
 - **Load Time**: < 100ms
 - **Memory Usage**: < 5MB
 
-## 🎉 Special Thanks
 
-- Instagram users who requested this functionality
-- Chrome extension development community
-- Beta testers and contributors
 
 ---
 
