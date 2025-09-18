@@ -1,6 +1,6 @@
 # InstaNeverPause 🎵
 
-![Version](https://img.shields.io/badge/version-1.5-blue.svg)
+![Version](https://img.shields.io/badge/version-1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-yellow.svg)
 ![Instagram](https://img.shields.io/badge/Instagram-Compatible-purple.svg)
