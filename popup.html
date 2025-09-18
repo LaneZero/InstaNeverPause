@@ -1,102 +1,445 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaNeverPause</title>
     <style>
-        body {
-            width: 300px;
-            padding: 20px;
-            font-family: Arial, sans-serif;
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 360px;
+            min-height: 480px;
+            color: #333;
+            overflow: hidden;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 28px;
+            margin: 12px;
+            box-shadow: 
+                0 25px 50px rgba(31, 38, 135, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+        }
+
         .header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 32px;
+            position: relative;
         }
-        
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .logo-icon {
+            font-size: 32px;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-8px) rotate(5deg); }
+        }
+
+        .logo-text h2 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+
+        .tagline {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .toggle-section {
+            background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4));
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+        }
+
         .toggle-container {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
-        
+
+        .toggle-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         .toggle-switch {
-            width: 50px;
-            height: 25px;
-            background: #ccc;
-            border-radius: 25px;
+            width: 64px;
+            height: 32px;
+            background: linear-gradient(135deg, #ddd, #bbb);
+            border-radius: 32px;
             cursor: pointer;
             position: relative;
-            transition: background 0.3s;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                inset 0 2px 4px rgba(0,0,0,0.1),
+                0 2px 8px rgba(0,0,0,0.1);
         }
-        
+
         .toggle-switch.active {
-            background: #4CAF50;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            box-shadow: 
+                inset 0 2px 4px rgba(0,0,0,0.1),
+                0 4px 20px rgba(79, 172, 254, 0.4);
         }
-        
+
         .toggle-slider {
-            width: 21px;
-            height: 21px;
-            background: white;
+            width: 26px;
+            height: 26px;
+            background: linear-gradient(135deg, #fff, #f8f9fa);
             border-radius: 50%;
             position: absolute;
-            top: 2px;
-            left: 2px;
-            transition: transform 0.3s;
+            top: 3px;
+            left: 3px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 
+                0 4px 12px rgba(0,0,0,0.15),
+                0 2px 4px rgba(0,0,0,0.1);
         }
-        
+
         .toggle-switch.active .toggle-slider {
-            transform: translateX(25px);
+            transform: translateX(32px);
+            box-shadow: 
+                0 6px 20px rgba(0,0,0,0.2),
+                0 2px 4px rgba(0,0,0,0.1);
         }
-        
-        .status {
+
+        .status-card {
+            padding: 20px;
+            border-radius: 16px;
             text-align: center;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 15px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
         }
-        
-        .status.active {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+
+        .status-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.5s;
         }
-        
-        .status.inactive {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+
+        .status-card:hover::before {
+            left: 100%;
         }
-        
-        .info {
+
+        .status-card.active {
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05));
+            border-left: 4px solid #4CAF50;
+        }
+
+        .status-card.inactive {
+            background: linear-gradient(135deg, rgba(244, 67, 54, 0.15), rgba(244, 67, 54, 0.05));
+            border-left: 4px solid #f44336;
+        }
+
+        .status-card.loading {
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.05));
+            border-left: 4px solid #ffc107;
+        }
+
+        .status-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            position: relative;
+        }
+
+        .status-indicator.active {
+            background: #4CAF50;
+            box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+            animation: pulse-green 2s infinite;
+        }
+
+        .status-indicator.inactive {
+            background: #f44336;
+            box-shadow: 0 0 20px rgba(244, 67, 54, 0.6);
+        }
+
+        .status-indicator.loading {
+            background: #ffc107;
+            animation: pulse-yellow 1.5s infinite;
+        }
+
+        @keyframes pulse-green {
+            0%, 100% { 
+                transform: scale(1);
+                box-shadow: 0 0 20px rgba(76, 175, 80, 0.6);
+            }
+            50% { 
+                transform: scale(1.2);
+                box-shadow: 0 0 30px rgba(76, 175, 80, 0.8);
+            }
+        }
+
+        @keyframes pulse-yellow {
+            0%, 100% { 
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% { 
+                transform: scale(1.1);
+                opacity: 0.7;
+            }
+        }
+
+        .status-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .info-section {
+            background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.3));
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .info-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #555;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .info-subtext {
             font-size: 12px;
-            color: #666;
+            color: #777;
+            opacity: 0.8;
+        }
+
+        .footer {
+            margin-top: 24px;
             text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .footer-text {
+            font-size: 11px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .author-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .author-link:hover {
+            color: #764ba2;
+        }
+
+        .author-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 0;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .author-link:hover::after {
+            width: 100%;
+        }
+
+        .github-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .github-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .github-icon {
+            font-size: 14px;
+        }
+
+        /* Loading animation */
+        .loading-spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #ffc107;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 380px) {
+            body {
+                width: 320px;
+            }
+            
+            .container {
+                margin: 8px;
+                padding: 20px;
+            }
+        }
+
+        /* Smooth transitions for all interactive elements */
+        * {
+            transition: all 0.3s ease;
+        }
+
+        /* Custom selection color */
+        ::selection {
+            background: rgba(102, 126, 234, 0.3);
         }
     </style>
 </head>
 <body>
-<div class="header">
-    <h2>InstaNeverPause</h2>
-    <p class="tagline">Never pause, always play! 🎵</p>
-</div>
-    
-    <div class="toggle-container">
-        <span>Enable Extension</span>
-        <div class="toggle-switch" id="toggleSwitch">
-            <div class="toggle-slider"></div>
+    <div class="container">
+        <div class="header">
+            <div class="logo-container">
+                <span class="logo-icon">🎵</span>
+                <div class="logo-text">
+                    <h2>InstaNeverPause</h2>
+                </div>
+            </div>
+            <p class="tagline">Never pause, always play! ✨</p>
+        </div>
+        
+        <div class="main-content">
+            <div class="toggle-section">
+                <div class="toggle-container">
+                    <div class="toggle-label">
+                        <span>🎬</span>
+                        <span>Enable Extension</span>
+                    </div>
+                    <div class="toggle-switch" id="toggleSwitch">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-card loading" id="status">
+                <div class="status-content">
+                    <div class="status-indicator loading"></div>
+                    <span class="status-text">Loading...</span>
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <span class="info-icon">📱</span>
+                <div class="info-text">Keep Instagram videos playing when switching tabs</div>
+                <div class="info-subtext">Works automatically in the background</div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <div class="footer-text">
+                Coded with ❤️ by <a href="https://github.com/LaneZero" target="_blank" class="author-link">LaneZero</a>
+            </div>
+            <a href="https://github.com/LaneZero" target="_blank" class="github-link">
+                <span class="github-icon">⚡</span>
+                <span>View on GitHub</span>
+            </a>
         </div>
     </div>
-    
-    <div class="status" id="status">
-        Loading...
-    </div>
-    
-    <div class="info">
-        Keep Instagram videos playing when switching tabs
-    </div>
-    
+
     <script src="popup.js"></script>
 </body>
 </html>
