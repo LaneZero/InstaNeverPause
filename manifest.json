@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "InstaNeverPause",
+  "version": "1.0",
+  "description": "Never let Instagram videos pause again! Keep videos playing when switching tabs.",
+  
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  
+  "host_permissions": [
+    "*://*.instagram.com/*"
+  ],
+  
+  "content_scripts": [
+    {
+      "matches": ["*://*.instagram.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "InstaNeverPause - Keep Instagram Videos Playing"
+  },
+  
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
