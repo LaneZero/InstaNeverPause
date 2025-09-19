@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InstaNeverPause - Crypto Support</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 
+                0 25px 50px rgba(31, 38, 135, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .description {
+            font-size: 14px;
+            color: #777;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+
+        .crypto-grid {
+            display: grid;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .crypto-section {
+            background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.4));
+            border-radius: 20px;
+            padding: 28px;
+            border: 1px solid rgba(255,255,255,0.3);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .crypto-section:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .crypto-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .crypto-logo {
+            font-size: 40px;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+        }
+
+        .crypto-info h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .crypto-info p {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .networks {
+            display: grid;
+            gap: 16px;
+        }
+
+        .network-item {
+            background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .network-item:hover {
+            background: linear-gradient(135deg, rgba(255,255,255,1), rgba(255,255,255,0.8));
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.1);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .network-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .network-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .network-badge {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .address-container {
+            position: relative;
+        }
+
+        .address {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: #555;
+            background: rgba(102, 126, 234, 0.05);
+            padding: 12px 50px 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+            word-break: break-all;
+            line-height: 1.4;
+            transition: all 0.3s ease;
+        }
+
+        .address:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-color: rgba(102, 126, 234, 0.2);
+        }
+
+        .copy-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .copy-btn:hover {
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .copy-btn:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .copy-btn.copied {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            animation: success-pulse 0.6s ease;
+        }
+
+        @keyframes success-pulse {
+            0% { transform: translateY(-50%) scale(1); }
+            50% { transform: translateY(-50%) scale(1.1); }
+            100% { transform: translateY(-50%) scale(1); }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+            transform: translateX(400px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            font-weight: 500;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .footer-note {
+            text-align: center;
+            padding: 24px;
+            background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.05));
+            border-radius: 16px;
+            border: 1px solid rgba(255, 193, 7, 0.2);
+            margin-top: 32px;
+        }
+
+        .footer-note h4 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .footer-note p {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Network specific colors */
+        .bitcoin { border-left: 4px solid #f7931a; }
+        .ethereum { border-left: 4px solid #627eea; }
+        .tron { border-left: 4px solid #ff060a; }
+        .bsc { border-left: 4px solid #f3ba2f; }
+        .polygon { border-left: 4px solid #8247e5; }
+        .solana { border-left: 4px solid #9945ff; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 24px;
+            }
+            
+            .back-btn {
+                position: relative;
+                top: auto;
+                left: auto;
+                margin-bottom: 20px;
+            }
+            
+            .title {
+                font-size: 24px;
+            }
+            
+            .crypto-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+            
+            .crypto-logo {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="back-btn" onclick="window.history.back()">
+        ← Back to Extension
+    </button>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">💰 Cryptocurrency Support</h1>
+            <p class="subtitle">Support InstaNeverPause Development</p>
+            <p class="description">
+                Your donations help keep this extension free and continuously improved. 
+                Choose your preferred cryptocurrency and network below.
+            </p>
+        </div>
+
+        <div class="crypto-grid">
+            <!-- Bitcoin Section -->
+            <div class="crypto-section">
+                <div class="crypto-header">
+                    <span class="crypto-logo">₿</span>
+                    <div class="crypto-info">
+                        <h3>Bitcoin</h3>
+                        <p>The original cryptocurrency</p>
+                    </div>
+                </div>
+                <div class="networks">
+                    <div class="network-item bitcoin">
+                        <div class="network-header">
+                            <div class="network-name">
+                                <span>🔗</span>
+                                Bitcoin Network
+                            </div>
+                            <span class="network-badge">BTC</span>
+                        </div>
+                        <div class="address-container">
+                            <div class="address">bc1q5tl36qpk27hf7upl8l753xa0gcm57adrvmwgkz</div>
+                            <button class="copy-btn" onclick="copyAddress(this, 'bc1q5tl36qpk27hf7upl8l753xa0gcm57adrvmwgkz')">
+                                📋 Copy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- USDT Section -->
+            <div class="crypto-section">
+                <div class="crypto-header">
+                    <span class="crypto-logo">₮</span>
+                    <div class="crypto-info">
+                        <h3>Tether (USDT)</h3>

@@ -1,8 +1,10 @@
-// Instagram Video Keeper - Simple & Effective Version
+// InstaNeverPause - Content Script (Based on working version)
+// Coded by LaneZero - https://github.com/LaneZero
+
 (function() {
     'use strict';
     
-    console.log('Instagram Video Keeper: Loading...');
+    console.log('🎵 InstaNeverPause: Loading...');
     
     let extensionEnabled = true;
     let isInitialized = false;
@@ -11,9 +13,9 @@
     function loadSettings() {
         try {
             if (typeof chrome !== 'undefined' && chrome.storage) {
-                chrome.storage.sync.get(['enabled'], function(result) {
-                    extensionEnabled = result.enabled !== false;
-                    console.log('Instagram Video Keeper: Extension enabled:', extensionEnabled);
+                chrome.storage.sync.get(['extensionEnabled'], function(result) {
+                    extensionEnabled = result.extensionEnabled !== false;
+                    console.log('🎵 InstaNeverPause: Extension enabled:', extensionEnabled);
                     if (extensionEnabled && !isInitialized) {
                         initializeExtension();
                     }
@@ -23,7 +25,7 @@
                 initializeExtension();
             }
         } catch (error) {
-            console.log('Instagram Video Keeper: Settings error, using defaults');
+            console.log('🎵 InstaNeverPause: Settings error, using defaults');
             extensionEnabled = true;
             initializeExtension();
         }
@@ -33,7 +35,7 @@
     function initializeExtension() {
         if (isInitialized) return;
         
-        console.log('Instagram Video Keeper: Initializing...');
+        console.log('🎵 InstaNeverPause: Initializing...');
         
         // Override document visibility properties
         overrideVisibility();
@@ -42,7 +44,7 @@
         startVideoMonitoring();
         
         isInitialized = true;
-        console.log('Instagram Video Keeper: Initialized successfully');
+        console.log('✅ InstaNeverPause: Initialized successfully');
     }
     
     // Override visibility properties
@@ -56,7 +58,7 @@
                 configurable: true
             });
         } catch (e) {
-            console.log('Instagram Video Keeper: Could not override document.hidden');
+            console.log('🎵 InstaNeverPause: Could not override document.hidden');
         }
         
         // Override document.visibilityState
@@ -68,18 +70,18 @@
                 configurable: true
             });
         } catch (e) {
-            console.log('Instagram Video Keeper: Could not override document.visibilityState');
+            console.log('🎵 InstaNeverPause: Could not override document.visibilityState');
         }
         
         // Block visibilitychange events
         document.addEventListener('visibilitychange', function(e) {
             if (extensionEnabled) {
                 e.stopImmediatePropagation();
-                console.log('Instagram Video Keeper: Blocked visibilitychange event');
+                console.log('🎵 InstaNeverPause: Blocked visibilitychange event');
             }
         }, true);
         
-        console.log('Instagram Video Keeper: Visibility override active');
+        console.log('🎵 InstaNeverPause: Visibility override active');
     }
     
     // Video monitoring system
@@ -89,15 +91,15 @@
             
             const videos = document.querySelectorAll('video');
             videos.forEach(function(video) {
-                if (!video.hasAttribute('data-keeper-monitored')) {
-                    video.setAttribute('data-keeper-monitored', 'true');
+                if (!video.hasAttribute('data-instanever-monitored')) {
+                    video.setAttribute('data-instanever-monitored', 'true');
                     setupVideoListeners(video);
-                    console.log('Instagram Video Keeper: Video registered');
+                    console.log('🎵 InstaNeverPause: Video registered');
                 }
             });
         }, 1000);
         
-        console.log('Instagram Video Keeper: Video monitoring started');
+        console.log('🎵 InstaNeverPause: Video monitoring started');
     }
     
     // Setup video event listeners
@@ -110,7 +112,7 @@
         video.addEventListener('play', function() {
             userPaused = false;
             resumeAttempts = 0;
-            console.log('Instagram Video Keeper: Video started playing naturally');
+            console.log('🎵 InstaNeverPause: Video started playing naturally');
         });
         
         // Pause event
@@ -125,21 +127,21 @@
             
             if (isUserAction) {
                 userPaused = true;
-                console.log('Instagram Video Keeper: User paused video - respecting user action');
+                console.log('🎵 InstaNeverPause: User paused video - respecting user action');
                 return;
             }
             
             // If not user action and video is in viewport, try to resume
             if (!userPaused && isVideoInViewport(video) && resumeAttempts < maxAttempts) {
                 resumeAttempts++;
-                console.log('Instagram Video Keeper: Smart resume attempt', resumeAttempts);
+                console.log('🎵 InstaNeverPause: Smart resume attempt', resumeAttempts);
                 
                 setTimeout(function() {
                     if (video.paused && !video.ended) {
                         const playPromise = video.play();
                         if (playPromise) {
                             playPromise.catch(function(error) {
-                                console.log('Instagram Video Keeper: Resume failed:', error);
+                                console.log('🎵 InstaNeverPause: Resume failed:', error);
                             });
                         }
                     }
@@ -156,23 +158,27 @@
     
     // Check if video is in viewport
     function isVideoInViewport(video) {
-        const rect = video.getBoundingClientRect();
-        return (
-            rect.top >= 0 &&
-            rect.left >= 0 &&
-            rect.bottom <= window.innerHeight &&
-            rect.right <= window.innerWidth &&
-            rect.width > 0 &&
-            rect.height > 0
-        );
+        try {
+            const rect = video.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= window.innerHeight &&
+                rect.right <= window.innerWidth &&
+                rect.width > 0 &&
+                rect.height > 0
+            );
+        } catch (error) {
+            return true; // Default to true if check fails
+        }
     }
     
     // Listen for settings changes
     if (typeof chrome !== 'undefined' && chrome.storage) {
         chrome.storage.onChanged.addListener(function(changes) {
-            if (changes.enabled) {
-                extensionEnabled = changes.enabled.newValue;
-                console.log('Instagram Video Keeper: Extension toggled:', extensionEnabled);
+            if (changes.extensionEnabled) {
+                extensionEnabled = changes.extensionEnabled.newValue;
+                console.log('🎵 InstaNeverPause: Extension toggled:', extensionEnabled);
                 
                 if (extensionEnabled && !isInitialized) {
                     initializeExtension();
@@ -184,14 +190,31 @@
     // Message handling
     if (typeof chrome !== 'undefined' && chrome.runtime) {
         chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-            if (request.action === 'getStatus') {
-                const videos = document.querySelectorAll('video[data-keeper-monitored]');
-                sendResponse({
-                    enabled: extensionEnabled,
-                    videosMonitored: videos.length,
-                    initialized: isInitialized
-                });
+            try {
+                if (request.action === 'toggleExtension') {
+                    extensionEnabled = request.enabled;
+                    console.log('🎵 InstaNeverPause: Extension toggled via message:', extensionEnabled);
+                    
+                    if (extensionEnabled && !isInitialized) {
+                        initializeExtension();
+                    }
+                    
+                    sendResponse({ success: true, enabled: extensionEnabled });
+                } else if (request.action === 'getStatus') {
+                    const videos = document.querySelectorAll('video[data-instanever-monitored]');
+                    sendResponse({
+                        success: true,
+                        enabled: extensionEnabled,
+                        videosMonitored: videos.length,
+                        initialized: isInitialized
+                    });
+                }
+            } catch (error) {
+                console.error('🎵 InstaNeverPause: Message handling error:', error);
+                sendResponse({ success: false, error: error.message });
             }
+            
+            return true;
         });
     }
     
@@ -205,5 +228,5 @@
     // Also try immediate initialization
     setTimeout(loadSettings, 100);
     
-    console.log('Instagram Video Keeper: Script loaded');
+    console.log('✅ InstaNeverPause: Script loaded successfully');
 })();

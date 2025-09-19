@@ -1,109 +1,189 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const toggleSwitch = document.getElementById('toggleSwitch');
-    const status = document.getElementById('status');
-    const statusText = status.querySelector('.status-text');
-    const statusIndicator = status.querySelector('.status-indicator');
+// InstaNeverPause - Popup Script
+// Coded by LaneZero - https://github.com/LaneZero
 
-    // Load initial state
-    chrome.storage.local.get(['enabled'], function(result) {
-        const isEnabled = result.enabled !== false;
-        updateToggleState(isEnabled);
-        updateStatus(isEnabled);
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🎵 InstaNeverPause popup loaded');
+    
+    // DOM Elements
+    const toggleSwitch = document.getElementById('toggleSwitch');
+    const toggleLabel = document.getElementById('toggleLabel');
+    const statusIndicator = document.getElementById('statusIndicator');
+    const statusText = document.getElementById('statusText');
+    const cryptoHeader = document.getElementById('cryptoHeader');
+    const cryptoContent = document.getElementById('cryptoContent');
+    const copySuccess = document.getElementById('copySuccess');
+
+    // Check if we're on Instagram
+    let isOnInstagram = false;
+    let currentTab = null;
+    
+    try {
+        [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        isOnInstagram = currentTab && currentTab.url && currentTab.url.includes('instagram.com');
+    } catch (error) {
+        console.log('Could not check current tab:', error);
+    }
+
+    // Load saved state
+    let isEnabled = true; // Default to enabled
+    try {
+        const result = await chrome.storage.sync.get(['extensionEnabled']);
+        isEnabled = result.extensionEnabled !== false;
+    } catch (error) {
+        console.error('Error loading state:', error);
+        // Set default state
+        await chrome.storage.sync.set({ extensionEnabled: true }).catch(() => {});
+    }
+    
+    updateUI(isEnabled);
+
+    // Toggle functionality
+    toggleSwitch.addEventListener('click', async () => {
+        try {
+            isEnabled = !isEnabled;
+            
+            // Save state
+            await chrome.storage.sync.set({ extensionEnabled: isEnabled });
+            updateUI(isEnabled);
+            
+            // Send message to content script if on Instagram
+            if (isOnInstagram && currentTab) {
+                try {
+                    const response = await chrome.tabs.sendMessage(currentTab.id, { 
+                        action: 'toggleExtension', 
+                        enabled: isEnabled 
+                    });
+                    console.log('Message sent successfully:', response);
+                } catch (msgError) {
+                    console.log('Content script not ready (normal):', msgError.message);
+                }
+            }
+        } catch (error) {
+            console.error('Error in toggle:', error);
+            // Revert state on error
+            isEnabled = !isEnabled;
+            updateUI(isEnabled);
+        }
     });
 
-    // Toggle switch click handler
-    toggleSwitch.addEventListener('click', function() {
-        const isCurrentlyActive = toggleSwitch.classList.contains('active');
-        const newState = !isCurrentlyActive;
-        
-        // Add click animation
-        toggleSwitch.style.transform = 'scale(0.95)';
-        setTimeout(() => {
-            toggleSwitch.style.transform = '';
-        }, 150);
-        
-        // Update state
-        updateToggleState(newState);
-        updateStatus(newState);
-        
-        // Save to storage
-        chrome.storage.local.set({ enabled: newState });
-        
-        // Send message to content script
-        chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-            if (tabs[0] && tabs[0].url.includes('instagram.com')) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    type: 'TOGGLE_EXTENSION',
-                    enabled: newState
-                }).catch(() => {
-                    console.log('Content script not ready yet');
-                });
+    // Update UI based on state
+    function updateUI(enabled) {
+        if (enabled) {
+            toggleSwitch.classList.add('active');
+            toggleLabel.classList.add('active');
+            toggleLabel.textContent = 'Enabled';
+            statusIndicator.classList.add('active');
+            
+            if (isOnInstagram) {
+                statusText.textContent = 'Extension is active! Instagram videos will never pause when switching tabs.';
+            } else {
+                statusText.textContent = 'Extension is enabled. Visit Instagram to keep videos playing in background!';
             }
+        } else {
+            toggleSwitch.classList.remove('active');
+            toggleLabel.classList.remove('active');
+            toggleLabel.textContent = 'Disabled';
+            statusIndicator.classList.remove('active');
+            statusText.textContent = 'Extension is disabled. Videos will pause normally when switching tabs.';
+        }
+    }
+
+    // Crypto section toggle
+    if (cryptoHeader && cryptoContent) {
+        cryptoHeader.addEventListener('click', () => {
+            const isExpanded = cryptoContent.classList.contains('expanded');
+            
+            if (isExpanded) {
+                cryptoContent.classList.remove('expanded');
+                cryptoHeader.classList.remove('expanded');
+            } else {
+                cryptoContent.classList.add('expanded');
+                cryptoHeader.classList.add('expanded');
+            }
+        });
+    }
+
+    // Copy functionality for crypto addresses
+    document.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('copy-button') || e.target.closest('.network-address')) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const networkAddress = e.target.closest('.network-address');
+            if (!networkAddress) return;
+            
+            const address = networkAddress.getAttribute('data-address');
+            if (!address) return;
+            
+            try {
+                await navigator.clipboard.writeText(address);
+                showCopySuccess();
+                
+                // Visual feedback
+                const copyButton = networkAddress.querySelector('.copy-button');
+                if (copyButton) {
+                    const originalText = copyButton.textContent;
+                    copyButton.textContent = 'Copied!';
+                    copyButton.style.background = '#4CAF50';
+                    
+                    setTimeout(() => {
+                        copyButton.textContent = originalText;
+                        copyButton.style.background = '';
+                    }, 1500);
+                }
+            } catch (error) {
+                console.error('Copy failed:', error);
+                
+                // Fallback
+                const textArea = document.createElement('textarea');
+                textArea.value = address;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                
+                try {
+                    document.execCommand('copy');
+                    showCopySuccess();
+                } catch (fallbackError) {
+                    alert('Copy failed. Address: ' + address);
+                }
+                
+                document.body.removeChild(textArea);
+            }
+        }
+    });
+
+    // Show copy success notification
+    function showCopySuccess() {
+        if (copySuccess) {
+            copySuccess.classList.add('show');
+            setTimeout(() => {
+                copySuccess.classList.remove('show');
+            }, 2500);
+        }
+    }
+
+    // Add hover effects
+    document.querySelectorAll('.network-address').forEach(address => {
+        address.addEventListener('mouseenter', () => {
+            address.style.transform = 'translateY(-1px)';
+        });
+        
+        address.addEventListener('mouseleave', () => {
+            address.style.transform = 'translateY(0)';
         });
     });
 
-    function updateToggleState(isEnabled) {
-        if (isEnabled) {
-            toggleSwitch.classList.add('active');
-        } else {
-            toggleSwitch.classList.remove('active');
-        }
+    // Version badge click
+    const versionBadge = document.querySelector('.version-badge');
+    if (versionBadge) {
+        versionBadge.addEventListener('click', () => {
+            chrome.tabs.create({ 
+                url: 'https://github.com/LaneZero/InstaNeverPause' 
+            }).catch(() => {});
+        });
     }
 
-    function updateStatus(isEnabled) {
-        // Remove all status classes
-        status.classList.remove('active', 'inactive', 'loading');
-        statusIndicator.classList.remove('active', 'inactive', 'loading');
-        
-        if (isEnabled) {
-            status.classList.add('active');
-            statusIndicator.classList.add('active');
-            statusText.textContent = 'Extension Active';
-        } else {
-            status.classList.add('inactive');
-            statusIndicator.classList.add('inactive');
-            statusText.textContent = 'Extension Inactive';
-        }
-        
-        // Remove loading spinner if it exists
-        const spinner = status.querySelector('.loading-spinner');
-        if (spinner) {
-            spinner.style.display = 'none';
-        }
-    }
-
-    // Check if we're on Instagram
-    chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-        if (tabs[0] && !tabs[0].url.includes('instagram.com')) {
-            // Show info that extension only works on Instagram
-            const infoSection = document.querySelector('.info-section');
-            infoSection.innerHTML = `
-                <span class="info-icon">⚠️</span>
-                <div class="info-text" style="color: #ff9800;">Please navigate to Instagram</div>
-                <div class="info-subtext">This extension only works on Instagram.com</div>
-            `;
-        }
-    });
-
-    // Add some interactive effects
-    const container = document.querySelector('.container');
-    
-    // Add subtle mouse move effect
-    container.addEventListener('mousemove', function(e) {
-        const rect = container.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        const centerX = rect.width / 2;
-        const centerY = rect.height / 2;
-        
-        const rotateX = (y - centerY) / 20;
-        const rotateY = (centerX - x) / 20;
-        
-        container.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-    });
-    
-    container.addEventListener('mouseleave', function() {
-        container.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg)';
-    });
+    console.log('✅ InstaNeverPause popup initialized successfully');
 });
