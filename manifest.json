@@ -1,7 +1,9 @@
 {
     "manifest_version": 3,
     "name": "InstaNeverPause",
+       "author": "LaneZeroX@proton.me",
     "version": "1.0.0",
+      "short_name": "INP",
     "description": "Keep Instagram videos playing without interruptions when switching tabs. Never miss a moment!",
     "permissions": [
         "storage",
