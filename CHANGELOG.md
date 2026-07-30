@@ -15,6 +15,10 @@ This project follows the principles of [Keep a Changelog](https://keepachangelog
 * Added keyboard support and accessibility attributes to interactive popup controls.
 * Added a Chrome manual testing checklist for installation, playback, publishing, performance, and release validation.
 * Added repository hygiene rules through `.gitignore`.
+* Added a compact, accessible donation panel with explicit copy controls.
+* Added accessible clipboard status notifications.
+* Added automatic popup version display from the installed manifest.
+* Added a donation network verification warning.
 
 ### Changed
 
@@ -30,6 +34,10 @@ This project follows the principles of [Keep a Changelog](https://keepachangelog
 * Updated the privacy policy to accurately describe permissions, local storage, migration behavior, Instagram access, donation information, and network activity.
 * Reduced unnecessary communication between the popup, background worker, and content scripts.
 * Limited extension behavior to Instagram video playback instead of modifying document-wide browser APIs.
+* Redesigned the Chrome popup with a smaller and lighter interface.
+* Moved popup styles from inline HTML into a dedicated `popup.css` file.
+* Consolidated Ethereum, BNB Chain, and Polygon into one EVM donation entry.
+* Simplified project support links and popup interactions.
 
 ### Fixed
 
@@ -70,9 +78,7 @@ This project follows the principles of [Keep a Changelog](https://keepachangelog
 
 ### Planned
 
-* Redesign the popup with a lighter and more compact interface.
-* Improve the donation section with clearer project-support messaging.
-* Add verified donation methods and safer copy interactions.
+
 * Display the final `1.2` version consistently across the popup, manifest, README, and release package.
 * Add automated linting and package validation.
 * Add a reproducible Chrome release packaging script.
