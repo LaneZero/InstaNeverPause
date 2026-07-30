@@ -1,189 +1,369 @@
-// InstaNeverPause - Popup Script
-// Coded by LaneZero - https://github.com/LaneZero
-
+/**
+ * InstaNeverPause - Chrome popup controller
+ *
+ * Manages the extension preference, donation panel,
+ * clipboard actions, and popup status feedback.
+ *
+ * @author LaneZero
+ * @license MIT
+ */
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('🎵 InstaNeverPause popup loaded');
-    
-    // DOM Elements
-    const toggleSwitch = document.getElementById('toggleSwitch');
-    const toggleLabel = document.getElementById('toggleLabel');
-    const statusIndicator = document.getElementById('statusIndicator');
-    const statusText = document.getElementById('statusText');
-    const cryptoHeader = document.getElementById('cryptoHeader');
-    const cryptoContent = document.getElementById('cryptoContent');
-    const copySuccess = document.getElementById('copySuccess');
+    'use strict';
 
-    // Check if we're on Instagram
-    let isOnInstagram = false;
-    let currentTab = null;
-    
-    try {
-        [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-        isOnInstagram = currentTab && currentTab.url && currentTab.url.includes('instagram.com');
-    } catch (error) {
-        console.log('Could not check current tab:', error);
+    const storageApi =
+        globalThis.InstaNeverPauseStorage;
+
+    const elements = {
+        toggle:
+            document.getElementById('toggleSwitch'),
+        statusIndicator:
+            document.getElementById('statusIndicator'),
+        statusTitle:
+            document.getElementById('statusTitle'),
+        statusText:
+            document.getElementById('statusText'),
+        versionBadge:
+            document.getElementById('versionBadge'),
+        donationToggle:
+            document.getElementById('donationToggle'),
+        donationPanel:
+            document.getElementById('donationPanel'),
+        toast:
+            document.getElementById('toast')
+    };
+
+    let isEnabled = true;
+    let toastTimerId = null;
+
+    if (!storageApi) {
+        showFatalState(
+            'Extension storage could not be initialized.'
+        );
+
+        return;
     }
 
-    // Load saved state
-    let isEnabled = true; // Default to enabled
-    try {
-        const result = await chrome.storage.sync.get(['extensionEnabled']);
-        isEnabled = result.extensionEnabled !== false;
-    } catch (error) {
-        console.error('Error loading state:', error);
-        // Set default state
-        await chrome.storage.sync.set({ extensionEnabled: true }).catch(() => {});
-    }
-    
-    updateUI(isEnabled);
+    /**
+     * Displays a fatal popup initialization state.
+     *
+     * @param {string} message Error message.
+     */
+    function showFatalState(message) {
+        if (elements.statusTitle) {
+            elements.statusTitle.textContent =
+                'Unavailable';
+        }
 
-    // Toggle functionality
-    toggleSwitch.addEventListener('click', async () => {
+        if (elements.statusText) {
+            elements.statusText.textContent =
+                message;
+        }
+
+        if (elements.toggle) {
+            elements.toggle.disabled = true;
+        }
+
+        console.error(
+            '[InstaNeverPause]',
+            message
+        );
+    }
+
+    /**
+     * Updates the enabled or disabled interface.
+     *
+     * @param {boolean} enabled Current extension state.
+     */
+    function updateEnabledState(enabled) {
+        isEnabled = enabled;
+
+        elements.toggle?.classList.toggle(
+            'active',
+            enabled
+        );
+
+        elements.statusIndicator?.classList.toggle(
+            'active',
+            enabled
+        );
+
+        elements.toggle?.setAttribute(
+            'aria-checked',
+            String(enabled)
+        );
+
+        elements.toggle?.setAttribute(
+            'aria-label',
+            enabled
+                ? 'Disable InstaNeverPause'
+                : 'Enable InstaNeverPause'
+        );
+
+        if (elements.statusTitle) {
+            elements.statusTitle.textContent =
+                enabled
+                    ? 'Protection enabled'
+                    : 'Protection disabled';
+        }
+
+        if (elements.statusText) {
+            elements.statusText.textContent =
+                enabled
+                    ? 'Instagram videos can continue while you switch tabs or minimize Chrome.'
+                    : 'Instagram will use its normal video pause behavior.';
+        }
+    }
+
+    /**
+     * Enables or disables the toggle busy state.
+     *
+     * @param {boolean} busy Whether a setting update is running.
+     */
+    function setToggleBusy(busy) {
+        if (!elements.toggle) {
+            return;
+        }
+
+        elements.toggle.disabled = busy;
+        elements.toggle.setAttribute(
+            'aria-busy',
+            String(busy)
+        );
+    }
+
+    /**
+     * Shows a temporary accessible notification.
+     *
+     * @param {string} message Notification text.
+     */
+    function showToast(message) {
+        if (!elements.toast) {
+            return;
+        }
+
+        if (toastTimerId !== null) {
+            window.clearTimeout(toastTimerId);
+        }
+
+        elements.toast.textContent = message;
+        elements.toast.hidden = false;
+
+        toastTimerId = window.setTimeout(() => {
+            elements.toast.hidden = true;
+            elements.toast.textContent = '';
+            toastTimerId = null;
+        }, 1800);
+    }
+
+    /**
+     * Copies text to the clipboard.
+     *
+     * @param {string} text Text to copy.
+     */
+    async function copyText(text) {
         try {
-            isEnabled = !isEnabled;
-            
-            // Save state
-            await chrome.storage.sync.set({ extensionEnabled: isEnabled });
-            updateUI(isEnabled);
-            
-            // Send message to content script if on Instagram
-            if (isOnInstagram && currentTab) {
-                try {
-                    const response = await chrome.tabs.sendMessage(currentTab.id, { 
-                        action: 'toggleExtension', 
-                        enabled: isEnabled 
-                    });
-                    console.log('Message sent successfully:', response);
-                } catch (msgError) {
-                    console.log('Content script not ready (normal):', msgError.message);
-                }
+            await navigator.clipboard.writeText(text);
+            return;
+        } catch {
+            const textArea =
+                document.createElement('textarea');
+
+            textArea.value = text;
+            textArea.setAttribute('readonly', '');
+            textArea.style.position = 'fixed';
+            textArea.style.top = '-1000px';
+            textArea.style.opacity = '0';
+
+            document.body.appendChild(textArea);
+            textArea.select();
+
+            const copied =
+                document.execCommand('copy');
+
+            textArea.remove();
+
+            if (!copied) {
+                throw new Error(
+                    'Clipboard operation failed.'
+                );
             }
+        }
+    }
+
+    /**
+     * Loads the display version from the installed manifest.
+     */
+    function displayManifestVersion() {
+        if (!elements.versionBadge) {
+            return;
+        }
+
+        const manifest =
+            chrome.runtime.getManifest();
+
+        elements.versionBadge.textContent =
+            `v${manifest.version}`;
+    }
+
+    /**
+     * Opens or closes the donation panel.
+     */
+    function toggleDonationPanel() {
+        if (
+            !elements.donationToggle ||
+            !elements.donationPanel
+        ) {
+            return;
+        }
+
+        const isExpanded =
+            elements.donationToggle.getAttribute(
+                'aria-expanded'
+            ) === 'true';
+
+        const nextExpanded = !isExpanded;
+
+        elements.donationToggle.setAttribute(
+            'aria-expanded',
+            String(nextExpanded)
+        );
+
+        elements.donationPanel.hidden =
+            !nextExpanded;
+    }
+
+    /**
+     * Handles an enabled-state change from the user.
+     */
+    async function handleToggle() {
+        const previousValue = isEnabled;
+        const nextValue = !previousValue;
+
+        setToggleBusy(true);
+        updateEnabledState(nextValue);
+
+        try {
+            const savedValue =
+                await storageApi.setEnabledState(
+                    nextValue
+                );
+
+            updateEnabledState(savedValue);
         } catch (error) {
-            console.error('Error in toggle:', error);
-            // Revert state on error
-            isEnabled = !isEnabled;
-            updateUI(isEnabled);
-        }
-    });
+            updateEnabledState(previousValue);
+            showToast(
+                'Unable to save the setting.'
+            );
 
-    // Update UI based on state
-    function updateUI(enabled) {
-        if (enabled) {
-            toggleSwitch.classList.add('active');
-            toggleLabel.classList.add('active');
-            toggleLabel.textContent = 'Enabled';
-            statusIndicator.classList.add('active');
-            
-            if (isOnInstagram) {
-                statusText.textContent = 'Extension is active! Instagram videos will never pause when switching tabs.';
-            } else {
-                statusText.textContent = 'Extension is enabled. Visit Instagram to keep videos playing in background!';
-            }
-        } else {
-            toggleSwitch.classList.remove('active');
-            toggleLabel.classList.remove('active');
-            toggleLabel.textContent = 'Disabled';
-            statusIndicator.classList.remove('active');
-            statusText.textContent = 'Extension is disabled. Videos will pause normally when switching tabs.';
+            console.error(
+                '[InstaNeverPause] Unable to save setting:',
+                error
+            );
+        } finally {
+            setToggleBusy(false);
         }
     }
 
-    // Crypto section toggle
-    if (cryptoHeader && cryptoContent) {
-        cryptoHeader.addEventListener('click', () => {
-            const isExpanded = cryptoContent.classList.contains('expanded');
-            
-            if (isExpanded) {
-                cryptoContent.classList.remove('expanded');
-                cryptoHeader.classList.remove('expanded');
-            } else {
-                cryptoContent.classList.add('expanded');
-                cryptoHeader.classList.add('expanded');
-            }
-        });
-    }
+    /**
+     * Handles clicks on wallet copy buttons.
+     *
+     * @param {MouseEvent} event Click event.
+     */
+    async function handleDocumentClick(event) {
+        const target = event.target;
 
-    // Copy functionality for crypto addresses
-    document.addEventListener('click', async (e) => {
-        if (e.target.classList.contains('copy-button') || e.target.closest('.network-address')) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const networkAddress = e.target.closest('.network-address');
-            if (!networkAddress) return;
-            
-            const address = networkAddress.getAttribute('data-address');
-            if (!address) return;
-            
-            try {
-                await navigator.clipboard.writeText(address);
-                showCopySuccess();
-                
-                // Visual feedback
-                const copyButton = networkAddress.querySelector('.copy-button');
-                if (copyButton) {
-                    const originalText = copyButton.textContent;
-                    copyButton.textContent = 'Copied!';
-                    copyButton.style.background = '#4CAF50';
-                    
-                    setTimeout(() => {
-                        copyButton.textContent = originalText;
-                        copyButton.style.background = '';
-                    }, 1500);
-                }
-            } catch (error) {
-                console.error('Copy failed:', error);
-                
-                // Fallback
-                const textArea = document.createElement('textarea');
-                textArea.value = address;
-                textArea.style.position = 'fixed';
-                textArea.style.opacity = '0';
-                document.body.appendChild(textArea);
-                textArea.select();
-                
-                try {
-                    document.execCommand('copy');
-                    showCopySuccess();
-                } catch (fallbackError) {
-                    alert('Copy failed. Address: ' + address);
-                }
-                
-                document.body.removeChild(textArea);
-            }
+        if (!(target instanceof Element)) {
+            return;
         }
-    });
 
-    // Show copy success notification
-    function showCopySuccess() {
-        if (copySuccess) {
-            copySuccess.classList.add('show');
-            setTimeout(() => {
-                copySuccess.classList.remove('show');
-            }, 2500);
+        const copyButton =
+            target.closest('[data-copy-address]');
+
+        if (!(copyButton instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        const address =
+            copyButton.dataset.copyAddress;
+
+        const label =
+            copyButton.dataset.copyLabel ??
+            'Wallet address';
+
+        if (!address) {
+            return;
+        }
+
+        const originalText =
+            copyButton.textContent ?? 'Copy';
+
+        copyButton.disabled = true;
+
+        try {
+            await copyText(address);
+
+            copyButton.textContent = 'Copied';
+            copyButton.classList.add('copied');
+
+            showToast(`${label} copied.`);
+        } catch (error) {
+            showToast(
+                'Unable to copy the address.'
+            );
+
+            console.error(
+                '[InstaNeverPause] Unable to copy address:',
+                error
+            );
+        } finally {
+            window.setTimeout(() => {
+                copyButton.textContent =
+                    originalText;
+
+                copyButton.classList.remove(
+                    'copied'
+                );
+
+                copyButton.disabled = false;
+            }, 1400);
         }
     }
 
-    // Add hover effects
-    document.querySelectorAll('.network-address').forEach(address => {
-        address.addEventListener('mouseenter', () => {
-            address.style.transform = 'translateY(-1px)';
-        });
-        
-        address.addEventListener('mouseleave', () => {
-            address.style.transform = 'translateY(0)';
-        });
-    });
+    elements.toggle?.addEventListener(
+        'click',
+        handleToggle
+    );
 
-    // Version badge click
-    const versionBadge = document.querySelector('.version-badge');
-    if (versionBadge) {
-        versionBadge.addEventListener('click', () => {
-            chrome.tabs.create({ 
-                url: 'https://github.com/LaneZero/InstaNeverPause' 
-            }).catch(() => {});
-        });
+    elements.donationToggle?.addEventListener(
+        'click',
+        toggleDonationPanel
+    );
+
+    document.addEventListener(
+        'click',
+        handleDocumentClick
+    );
+
+    storageApi.addEnabledStateListener(
+        updateEnabledState
+    );
+
+    displayManifestVersion();
+
+    try {
+        const enabled =
+            await storageApi.getEnabledState();
+
+        updateEnabledState(enabled);
+        setToggleBusy(false);
+    } catch (error) {
+        showFatalState(
+            'Your saved preference could not be loaded.'
+        );
+
+        console.error(
+            '[InstaNeverPause] Unable to load setting:',
+            error
+        );
     }
-
-    console.log('✅ InstaNeverPause popup initialized successfully');
 });
