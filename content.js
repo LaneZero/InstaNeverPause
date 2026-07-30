@@ -1,232 +1,119 @@
-// InstaNeverPause - Content Script (Based on working version)
-// Coded by LaneZero - https://github.com/LaneZero
-
-(function() {
+/**
+ * InstaNeverPause - Chrome extension state bridge
+ *
+ * Runs in Chrome's isolated extension world.
+ * Reads extension settings and securely bridges the enabled state to
+ * the Instagram page guard.
+ *
+ * @author LaneZero
+ * @license MIT
+ */
+(() => {
     'use strict';
-    
-    console.log('🎵 InstaNeverPause: Loading...');
-    
+
+    const SETTINGS_KEY = 'extensionEnabled';
+    const MESSAGE_SOURCE = 'instaneverpause-extension';
+    const MESSAGE_TYPE = 'SET_ENABLED';
+
     let extensionEnabled = true;
-    let isInitialized = false;
-    
-    // Load settings
+
+    /**
+     * Sends the extension state to the MAIN-world media guard.
+     */
+    function publishEnabledState() {
+        window.postMessage(
+            {
+                source: MESSAGE_SOURCE,
+                type: MESSAGE_TYPE,
+                enabled: extensionEnabled
+            },
+            window.location.origin
+        );
+    }
+
+    /**
+     * Applies and publishes a normalized enabled value.
+     *
+     * @param {unknown} value Stored or requested state.
+     */
+    function applyEnabledState(value) {
+        extensionEnabled = value !== false;
+        publishEnabledState();
+    }
+
+    /**
+     * Loads the current extension state from Chrome storage.
+     */
     function loadSettings() {
-        try {
-            if (typeof chrome !== 'undefined' && chrome.storage) {
-                chrome.storage.sync.get(['extensionEnabled'], function(result) {
-                    extensionEnabled = result.extensionEnabled !== false;
-                    console.log('🎵 InstaNeverPause: Extension enabled:', extensionEnabled);
-                    if (extensionEnabled && !isInitialized) {
-                        initializeExtension();
-                    }
-                });
-            } else {
-                extensionEnabled = true;
-                initializeExtension();
-            }
-        } catch (error) {
-            console.log('🎵 InstaNeverPause: Settings error, using defaults');
-            extensionEnabled = true;
-            initializeExtension();
-        }
-    }
-    
-    // Initialize extension
-    function initializeExtension() {
-        if (isInitialized) return;
-        
-        console.log('🎵 InstaNeverPause: Initializing...');
-        
-        // Override document visibility properties
-        overrideVisibility();
-        
-        // Start video monitoring
-        startVideoMonitoring();
-        
-        isInitialized = true;
-        console.log('✅ InstaNeverPause: Initialized successfully');
-    }
-    
-    // Override visibility properties
-    function overrideVisibility() {
-        // Override document.hidden
-        try {
-            Object.defineProperty(document, 'hidden', {
-                get: function() {
-                    return extensionEnabled ? false : true;
-                },
-                configurable: true
-            });
-        } catch (e) {
-            console.log('🎵 InstaNeverPause: Could not override document.hidden');
-        }
-        
-        // Override document.visibilityState
-        try {
-            Object.defineProperty(document, 'visibilityState', {
-                get: function() {
-                    return extensionEnabled ? 'visible' : 'hidden';
-                },
-                configurable: true
-            });
-        } catch (e) {
-            console.log('🎵 InstaNeverPause: Could not override document.visibilityState');
-        }
-        
-        // Block visibilitychange events
-        document.addEventListener('visibilitychange', function(e) {
-            if (extensionEnabled) {
-                e.stopImmediatePropagation();
-                console.log('🎵 InstaNeverPause: Blocked visibilitychange event');
-            }
-        }, true);
-        
-        console.log('🎵 InstaNeverPause: Visibility override active');
-    }
-    
-    // Video monitoring system
-    function startVideoMonitoring() {
-        let videoCheckInterval = setInterval(function() {
-            if (!extensionEnabled) return;
-            
-            const videos = document.querySelectorAll('video');
-            videos.forEach(function(video) {
-                if (!video.hasAttribute('data-instanever-monitored')) {
-                    video.setAttribute('data-instanever-monitored', 'true');
-                    setupVideoListeners(video);
-                    console.log('🎵 InstaNeverPause: Video registered');
+        chrome.storage.sync.get(
+            {
+                [SETTINGS_KEY]: true
+            },
+            (result) => {
+                if (chrome.runtime.lastError) {
+                    console.warn(
+                        '[InstaNeverPause] Unable to read settings:',
+                        chrome.runtime.lastError.message
+                    );
+
+                    applyEnabledState(true);
+                    return;
                 }
-            });
-        }, 1000);
-        
-        console.log('🎵 InstaNeverPause: Video monitoring started');
+
+                applyEnabledState(result[SETTINGS_KEY]);
+            }
+        );
     }
-    
-    // Setup video event listeners
-    function setupVideoListeners(video) {
-        let userPaused = false;
-        let resumeAttempts = 0;
-        const maxAttempts = 3;
-        
-        // Play event
-        video.addEventListener('play', function() {
-            userPaused = false;
-            resumeAttempts = 0;
-            console.log('🎵 InstaNeverPause: Video started playing naturally');
-        });
-        
-        // Pause event
-        video.addEventListener('pause', function(e) {
-            if (!extensionEnabled) return;
-            
-            // Check if this is a user action
-            const isUserAction = e.isTrusted && (
-                document.activeElement === video ||
-                e.target === video
-            );
-            
-            if (isUserAction) {
-                userPaused = true;
-                console.log('🎵 InstaNeverPause: User paused video - respecting user action');
+
+    /**
+     * Synchronizes state changes made through the popup or background.
+     */
+    chrome.storage.onChanged.addListener(
+        (changes, areaName) => {
+            if (
+                areaName !== 'sync' ||
+                !changes[SETTINGS_KEY]
+            ) {
                 return;
             }
-            
-            // If not user action and video is in viewport, try to resume
-            if (!userPaused && isVideoInViewport(video) && resumeAttempts < maxAttempts) {
-                resumeAttempts++;
-                console.log('🎵 InstaNeverPause: Smart resume attempt', resumeAttempts);
-                
-                setTimeout(function() {
-                    if (video.paused && !video.ended) {
-                        const playPromise = video.play();
-                        if (playPromise) {
-                            playPromise.catch(function(error) {
-                                console.log('🎵 InstaNeverPause: Resume failed:', error);
-                            });
-                        }
-                    }
-                }, 100);
-            }
-        });
-        
-        // Reset user pause flag when video ends
-        video.addEventListener('ended', function() {
-            userPaused = false;
-            resumeAttempts = 0;
-        });
-    }
-    
-    // Check if video is in viewport
-    function isVideoInViewport(video) {
-        try {
-            const rect = video.getBoundingClientRect();
-            return (
-                rect.top >= 0 &&
-                rect.left >= 0 &&
-                rect.bottom <= window.innerHeight &&
-                rect.right <= window.innerWidth &&
-                rect.width > 0 &&
-                rect.height > 0
+
+            applyEnabledState(
+                changes[SETTINGS_KEY].newValue
             );
-        } catch (error) {
-            return true; // Default to true if check fails
         }
-    }
-    
-    // Listen for settings changes
-    if (typeof chrome !== 'undefined' && chrome.storage) {
-        chrome.storage.onChanged.addListener(function(changes) {
-            if (changes.extensionEnabled) {
-                extensionEnabled = changes.extensionEnabled.newValue;
-                console.log('🎵 InstaNeverPause: Extension toggled:', extensionEnabled);
-                
-                if (extensionEnabled && !isInitialized) {
-                    initializeExtension();
-                }
+    );
+
+    /**
+     * Maintains compatibility with the current popup and service worker.
+     */
+    chrome.runtime.onMessage.addListener(
+        (request, _sender, sendResponse) => {
+            if (request?.action === 'toggleExtension') {
+                applyEnabledState(request.enabled);
+
+                sendResponse({
+                    success: true,
+                    enabled: extensionEnabled
+                });
+
+                return false;
             }
-        });
-    }
-    
-    // Message handling
-    if (typeof chrome !== 'undefined' && chrome.runtime) {
-        chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-            try {
-                if (request.action === 'toggleExtension') {
-                    extensionEnabled = request.enabled;
-                    console.log('🎵 InstaNeverPause: Extension toggled via message:', extensionEnabled);
-                    
-                    if (extensionEnabled && !isInitialized) {
-                        initializeExtension();
-                    }
-                    
-                    sendResponse({ success: true, enabled: extensionEnabled });
-                } else if (request.action === 'getStatus') {
-                    const videos = document.querySelectorAll('video[data-instanever-monitored]');
-                    sendResponse({
-                        success: true,
-                        enabled: extensionEnabled,
-                        videosMonitored: videos.length,
-                        initialized: isInitialized
-                    });
-                }
-            } catch (error) {
-                console.error('🎵 InstaNeverPause: Message handling error:', error);
-                sendResponse({ success: false, error: error.message });
+
+            if (request?.action === 'getStatus') {
+                sendResponse({
+                    success: true,
+                    enabled: extensionEnabled,
+                    initialized: true,
+                    videosMonitored:
+                        document.querySelectorAll('video').length
+                });
+
+                return false;
             }
-            
-            return true;
-        });
-    }
-    
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', loadSettings);
-    } else {
-        loadSettings();
-    }
-    
-    // Also try immediate initialization
-    setTimeout(loadSettings, 100);
-    
-    console.log('✅ InstaNeverPause: Script loaded successfully');
+
+            return false;
+        }
+    );
+
+    loadSettings();
 })();
