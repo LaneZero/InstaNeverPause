@@ -1,0 +1,29 @@
+﻿# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+coverage/
+
+# Extension packages
+*.zip
+*.crx
+*.xpi
+*.pem
+
+# Environment files
+.env
+.env.*
+
+# Editors
+.vscode/
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.log
+*.tmp
