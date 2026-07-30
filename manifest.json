@@ -1,17 +1,12 @@
 {
     "manifest_version": 3,
     "name": "InstaNeverPause",
-       "author": "LaneZeroX@proton.me",
+    "short_name": "INP",
     "version": "1.0.0",
-      "short_name": "INP",
+    "author": "LaneZeroX@proton.me",
     "description": "Keep Instagram videos playing without interruptions when switching tabs. Never miss a moment!",
     "permissions": [
-        "storage",
-        "activeTab",
-        "scripting"
-    ],
-    "host_permissions": [
-        "*://*.instagram.com/*"
+        "storage"
     ],
     "action": {
         "default_popup": "popup.html",
@@ -27,27 +22,27 @@
         "48": "icons/icon48.png",
         "128": "icons/icon128.png"
     },
-"content_scripts": [
-    {
-        "matches": ["*://*.instagram.com/*"],
-        "js": ["page-guard.js"],
-        "run_at": "document_start",
-        "world": "MAIN"
-    },
-    {
-        "matches": ["*://*.instagram.com/*"],
-        "js": ["content.js"],
-        "run_at": "document_start",
-        "world": "ISOLATED"
-    }
-],
-    "background": {
-        "service_worker": "background.js"
-    },
-    "web_accessible_resources": [
+    "content_scripts": [
         {
-            "resources": ["icons/*.png"],
-            "matches": ["*://*.instagram.com/*"]
+            "matches": [
+                "*://*.instagram.com/*"
+            ],
+            "js": [
+                "page-guard.js"
+            ],
+            "run_at": "document_start",
+            "world": "MAIN"
+        },
+        {
+            "matches": [
+                "*://*.instagram.com/*"
+            ],
+            "js": [
+                    "storage.js",
+                    "content.js"
+            ],
+            "run_at": "document_start",
+            "world": "ISOLATED"
         }
     ]
 }

@@ -2,8 +2,8 @@
  * InstaNeverPause - Chrome extension state bridge
  *
  * Runs in Chrome's isolated extension world.
- * Reads extension settings and securely bridges the enabled state to
- * the Instagram page guard.
+ * Sends the locally stored enabled state to the media guard running
+ * in Instagram's MAIN JavaScript world.
  *
  * @author LaneZero
  * @license MIT
@@ -11,109 +11,53 @@
 (() => {
     'use strict';
 
-    const SETTINGS_KEY = 'extensionEnabled';
     const MESSAGE_SOURCE = 'instaneverpause-extension';
     const MESSAGE_TYPE = 'SET_ENABLED';
 
-    let extensionEnabled = true;
+    const storageApi =
+        globalThis.InstaNeverPauseStorage;
+
+    if (!storageApi) {
+        console.error(
+            '[InstaNeverPause] Shared storage module is unavailable.'
+        );
+
+        return;
+    }
 
     /**
-     * Sends the extension state to the MAIN-world media guard.
+     * Publishes the enabled state to the MAIN-world media guard.
+     *
+     * @param {boolean} enabled Current extension state.
      */
-    function publishEnabledState() {
+    function publishEnabledState(enabled) {
         window.postMessage(
             {
                 source: MESSAGE_SOURCE,
                 type: MESSAGE_TYPE,
-                enabled: extensionEnabled
+                enabled
             },
             window.location.origin
         );
     }
 
-    /**
-     * Applies and publishes a normalized enabled value.
-     *
-     * @param {unknown} value Stored or requested state.
-     */
-    function applyEnabledState(value) {
-        extensionEnabled = value !== false;
-        publishEnabledState();
-    }
+    storageApi.addEnabledStateListener(
+        publishEnabledState
+    );
 
-    /**
-     * Loads the current extension state from Chrome storage.
-     */
-    function loadSettings() {
-        chrome.storage.sync.get(
-            {
-                [SETTINGS_KEY]: true
-            },
-            (result) => {
-                if (chrome.runtime.lastError) {
-                    console.warn(
-                        '[InstaNeverPause] Unable to read settings:',
-                        chrome.runtime.lastError.message
-                    );
-
-                    applyEnabledState(true);
-                    return;
-                }
-
-                applyEnabledState(result[SETTINGS_KEY]);
-            }
-        );
-    }
-
-    /**
-     * Synchronizes state changes made through the popup or background.
-     */
-    chrome.storage.onChanged.addListener(
-        (changes, areaName) => {
-            if (
-                areaName !== 'sync' ||
-                !changes[SETTINGS_KEY]
-            ) {
-                return;
-            }
-
-            applyEnabledState(
-                changes[SETTINGS_KEY].newValue
+    storageApi
+        .getEnabledState()
+        .then(publishEnabledState)
+        .catch((error) => {
+            console.warn(
+                '[InstaNeverPause] Unable to load local setting:',
+                error
             );
-        }
-    );
 
-    /**
-     * Maintains compatibility with the current popup and service worker.
-     */
-    chrome.runtime.onMessage.addListener(
-        (request, _sender, sendResponse) => {
-            if (request?.action === 'toggleExtension') {
-                applyEnabledState(request.enabled);
-
-                sendResponse({
-                    success: true,
-                    enabled: extensionEnabled
-                });
-
-                return false;
-            }
-
-            if (request?.action === 'getStatus') {
-                sendResponse({
-                    success: true,
-                    enabled: extensionEnabled,
-                    initialized: true,
-                    videosMonitored:
-                        document.querySelectorAll('video').length
-                });
-
-                return false;
-            }
-
-            return false;
-        }
-    );
-
-    loadSettings();
+            /*
+             * Fail open so existing users do not unexpectedly lose
+             * the extension's core behavior.
+             */
+            publishEnabledState(true);
+        });
 })();
