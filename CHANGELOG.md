@@ -1,55 +1,68 @@
 # Changelog
 
-All notable changes to **InstaNeverPause** will be documented in this file.
+All notable changes to **InstaNeverPause** are documented in this file.
 
 This project follows the principles of [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and uses semantic versioning where applicable.
 
 ## [Unreleased]
 
+### Planned
+
+* Prepare the Firefox 1.2 release.
+* Add automated linting and package validation.
+* Add reproducible release packaging.
+* Add GitHub Actions for automated checks.
+
+## [1.2] - 2026-07-30
+
 ### Added
 
-* Added a dedicated `page-guard.js` script that runs in Instagram's main JavaScript context.
-* Added a lightweight communication bridge between the isolated extension context and the Instagram page context.
-* Added a shared `storage.js` module for centralized preference management.
-* Added a one-time migration process from `chrome.storage.sync` to `chrome.storage.local`.
-* Added keyboard support and accessibility attributes to interactive popup controls.
-* Added a Chrome manual testing checklist for installation, playback, publishing, performance, and release validation.
-* Added repository hygiene rules through `.gitignore`.
-* Added a compact, accessible donation panel with explicit copy controls.
-* Added accessible clipboard status notifications.
+* Added `page-guard.js` to protect active Instagram video playback from the page's main JavaScript context.
+* Added a lightweight bridge between Chrome's isolated extension context and Instagram's page context.
+* Added `storage.js` for centralized preference management.
+* Added a one-time migration from `chrome.storage.sync` to `chrome.storage.local`.
+* Added a compact and accessible popup interface.
 * Added automatic popup version display from the installed manifest.
-* Added a donation network verification warning.
+* Added keyboard support for popup controls.
+* Added screen-reader attributes and accessible status messages.
+* Added explicit donation-address copy buttons.
+* Added accessible clipboard notifications.
+* Added a cryptocurrency network verification warning.
+* Added a Chrome manual testing checklist.
+* Added repository cleanup rules through `.gitignore`.
 
 ### Changed
 
-* Reworked background playback handling to target only active Instagram video elements.
-* Replaced continuous one-second DOM polling with event-driven playback protection.
-* Changed extension settings storage from `chrome.storage.sync` to `chrome.storage.local`.
-* Simplified extension state synchronization to use Chrome Storage as the single source of truth.
-* Updated the content script to run at `document_start`.
-* Separated Instagram page-level playback protection from extension storage access.
-* Improved enabled and disabled state handling without requiring Instagram tabs to be refreshed.
+* Reworked background playback handling to protect only active and visible Instagram videos.
+* Replaced continuous video scanning with event-driven playback protection.
+* Changed extension preference storage from `chrome.storage.sync` to `chrome.storage.local`.
+* Preserved existing user preferences through a one-time storage migration.
+* Simplified extension state synchronization by using Chrome Storage as the single source of truth.
+* Changed the content scripts to run at `document_start`.
+* Separated page-level video protection from extension storage access.
+* Improved enable and disable behavior without requiring an Instagram page refresh.
+* Redesigned the Chrome popup with a smaller and lighter interface.
+* Moved popup styling from inline HTML to `popup.css`.
 * Improved popup keyboard navigation and screen-reader compatibility.
 * Improved clipboard handling with a fallback for older browser environments.
-* Updated the privacy policy to accurately describe permissions, local storage, migration behavior, Instagram access, donation information, and network activity.
-* Reduced unnecessary communication between the popup, background worker, and content scripts.
-* Limited extension behavior to Instagram video playback instead of modifying document-wide browser APIs.
-* Redesigned the Chrome popup with a smaller and lighter interface.
-* Moved popup styles from inline HTML into a dedicated `popup.css` file.
-* Consolidated Ethereum, BNB Chain, and Polygon into one EVM donation entry.
-* Simplified project support links and popup interactions.
+* Consolidated Ethereum, BNB Chain, and Polygon donations into one EVM-compatible entry.
+* Improved project-support messaging and GitHub navigation.
+* Updated the Privacy Policy to match the extension's actual permissions and storage behavior.
+* Limited the extension's behavior to Instagram video playback instead of modifying document-wide browser APIs.
 
 ### Fixed
 
-* Fixed an issue where Instagram videos stopped playing after switching tabs or minimizing Chrome.
-* Fixed the reported Instagram publishing regression that could cause post captions to disappear while the extension was enabled.
-* Fixed unreliable user-pause detection based on media event trust and event targets.
-* Fixed incomplete extension disabling behavior that previously left monitoring logic active.
-* Fixed duplicate state updates caused by multiple message and storage listeners.
+* Fixed Instagram videos stopping after switching browser tabs.
+* Fixed Instagram videos stopping when Chrome was minimized.
+* Fixed the reported Instagram publishing regression that could cause post captions to disappear.
+* Fixed conflicts with Instagram's native `visibilitychange` event handlers.
+* Fixed unreliable user-pause detection based on media event targets and trusted-event assumptions.
+* Fixed extension disabling behavior that previously left monitoring logic active.
+* Fixed duplicate state updates caused by overlapping message and storage listeners.
 * Fixed unnecessary repeated video scans while Instagram was idle.
-* Fixed potential conflicts with Instagram's native `visibilitychange` event handlers.
-* Fixed inconsistent popup state when multiple Instagram tabs were open.
-* Fixed extension state persistence during migration from previous releases.
+* Fixed inconsistent extension state across multiple open Instagram tabs.
+* Fixed preference persistence during migration from earlier releases.
+* Fixed popup state updates that previously depended on direct tab messaging.
 
 ### Removed
 
@@ -60,30 +73,34 @@ This project follows the principles of [Keep a Changelog](https://keepachangelog
 * Removed the redundant Manifest V3 background service worker.
 * Removed direct popup-to-tab message broadcasting.
 * Removed redundant runtime message handlers from the content script.
+* Removed automatic opening of the GitHub repository after installation.
 * Removed the unused `activeTab` permission.
 * Removed the unused `scripting` permission.
-* Removed unnecessary host permission declarations.
-* Removed unused `web_accessible_resources` entries.
-* Removed automatic opening of the GitHub repository after installation.
+* Removed unnecessary `host_permissions`.
+* Removed unused `web_accessible_resources`.
 * Removed the legacy synced preference after successful local migration.
+* Removed duplicated donation entries for compatible EVM networks.
+* Removed unnecessary popup animations and decorative complexity.
 
 ### Security
 
-* Reduced the extension to the minimum required Chrome permission: `storage`.
-* Kept storage access inside Chrome's isolated extension environment.
-* Limited main-world execution to targeted media playback protection.
-* Added origin and message-source validation for communication between extension contexts.
-* Prevented extension settings and internal APIs from being exposed directly to Instagram page scripts.
-* Confirmed that the extension does not collect analytics, telemetry, credentials, captions, messages, media, or account information.
+* Reduced the extension permissions to `storage` only.
+* Kept Chrome Storage access inside the isolated extension environment.
+* Limited main-world execution to targeted video playback protection.
+* Added origin and message-source validation between extension contexts.
+* Prevented extension storage APIs from being exposed directly to Instagram page scripts.
+* Removed unnecessary permissions and background execution.
+* Confirmed that no remote scripts, stylesheets, analytics, or tracking services are used.
+* Confirmed that the extension does not collect Instagram captions, messages, credentials, media, profile information, or authentication data.
+* Added clear warnings requiring users to verify cryptocurrency addresses and networks before sending funds.
 
-### Planned
+### Privacy
 
-
-* Display the final `1.2` version consistently across the popup, manifest, README, and release package.
-* Add automated linting and package validation.
-* Add a reproducible Chrome release packaging script.
-* Complete the full Chrome release checklist.
-* Prepare the equivalent Firefox `1.2` release after the Chrome version is finalized.
+* Migrated extension preferences to local browser storage.
+* Updated documentation to explain the one-time migration from synced storage.
+* Clarified that the extension does not send background network requests.
+* Clarified that donation links and addresses are accessed only through direct user interaction.
+* Clarified that the extension does not process payments or track cryptocurrency transactions.
 
 ## [1.0.0]
 
@@ -93,9 +110,9 @@ This project follows the principles of [Keep a Changelog](https://keepachangelog
 * Background playback support for Instagram videos.
 * Automatic video resume behavior after switching tabs.
 * Enable and disable control through the extension popup.
-* Persistent extension preference using Chrome Storage.
+* Persistent extension preferences using Chrome Storage.
 * Basic popup interface.
 * Cryptocurrency donation information.
 * GitHub project link.
+* Initial Privacy Policy.
 * MIT License.
-* Initial privacy policy and project documentation.
